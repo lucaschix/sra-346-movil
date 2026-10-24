@@ -26,7 +26,32 @@ workflows:
         script: |
           set -euo pipefail
           mkdir -p diagnostics
-          flutter --version | tee diagnostics/flutter-version.txt
+          uname -m > diagnostics/architecture.txt
+          sw_vers > diagnostics/macos-version.txt
+          command -v tar > diagnostics/tar-path.txt
+          tar --version > diagnostics/tar-version.txt 2>&1
+          sra_flutter_bin="$(command -v flutter)"
+          sra_sdk_root="$(dirname "$(dirname "$sra_flutter_bin")")"
+          set +e
+          arch -x86_64 /bin/bash "$sra_flutter_bin" --version > diagnostics/flutter-bootstrap.log 2>&1
+          bootstrap_status=$?
+          set -e
+          cat diagnostics/flutter-bootstrap.log
+          if [ "$bootstrap_status" -ne 0 ]; then
+            echo 'El arranque falló. Ejecutando pub con trazas dentro del SDK, sin modificar SRA.'
+            set +e
+            (
+              cd "$sra_sdk_root/packages/flutter_tools"
+              arch -x86_64 /bin/bash "$sra_sdk_root/bin/cache/dart-sdk/bin/pub" \
+                --trace --verbosity=all upgrade --no-precompile
+            ) > diagnostics/flutter-pub-trace.log 2>&1
+            trace_status=$?
+            set -e
+            printf 'pub trace exit code: %s\n' "$trace_status"
+            tail -n 180 diagnostics/flutter-pub-trace.log
+            exit "$bootstrap_status"
+          fi
+          cp diagnostics/flutter-bootstrap.log diagnostics/flutter-version.txt
           flutter --version --machine > diagnostics/flutter-version.json
           python3 - <<'PY'
           import json
