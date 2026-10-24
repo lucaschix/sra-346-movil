@@ -21,6 +21,8 @@ workflows:
         script: |
           set -euo pipefail
           mkdir -p diagnostics
+          # El primer arranque puede escribir mensajes de bootstrap en stdout.
+          flutter --version 2>&1 | tee diagnostics/flutter-bootstrap.log
           flutter --version --machine > diagnostics/flutter-version.json
           python3 - <<'PY'
           import json
