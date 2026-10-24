@@ -1,0 +1,5 @@
+# Configuración de proyecto. Fusionar si ya existe este archivo.
+# Los modelos, permisos y proveedores se heredan de la sesión del usuario.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4

@@ -1,0 +1,30 @@
+Running Gradle task 'assembleDebug'...                          
+Checking the license for package Android SDK Build-Tools 28.0.3 in /opt/android-sdk-linux/licenses
+
+License for package Android SDK Build-Tools 28.0.3 accepted.
+
+Preparing "Install Android SDK Build-Tools 28.0.3 (revision: 28.0.3)".
+
+"Install Android SDK Build-Tools 28.0.3 (revision: 28.0.3)" ready.
+
+Installing Android SDK Build-Tools 28.0.3 in /opt/android-sdk-linux/build-tools/28.0.3
+
+"Install Android SDK Build-Tools 28.0.3 (revision: 28.0.3)" complete.
+
+"Install Android SDK Build-Tools 28.0.3 (revision: 28.0.3)" finished.
+
+Checking the license for package Android SDK Platform 28 in /opt/android-sdk-linux/licenses
+
+License for package Android SDK Platform 28 accepted.
+
+Preparing "Install Android SDK Platform 28 (revision: 6)".
+
+"Install Android SDK Platform 28 (revision: 6)" ready.
+
+Installing Android SDK Platform 28 in /opt/android-sdk-linux/platforms/android-28
+
+"Install Android SDK Platform 28 (revision: 6)" complete.
+
+"Install Android SDK Platform 28 (revision: 6)" finished.
+Running Gradle task 'assembleDebug'...                            113.1s
+✓ Built build/app/outputs/apk/debug/app-debug.apk.

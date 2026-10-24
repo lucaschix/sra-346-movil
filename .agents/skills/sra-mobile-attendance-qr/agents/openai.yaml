@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sra Mobile Attendance Qr"
+  short_description: "Procedimientos específicos de SRA móvil"
+  default_prompt: "Usa $sra-mobile-attendance-qr para trabajar en SRA móvil."

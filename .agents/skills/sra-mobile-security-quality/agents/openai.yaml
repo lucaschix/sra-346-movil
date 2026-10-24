@@ -1,0 +1,4 @@
+interface:
+  display_name: "SRA Mobile Security Quality"
+  short_description: "Seguridad y calidad priorizadas con MoSCoW"
+  default_prompt: "Usa $sra-mobile-security-quality para auditar SRA móvil y priorizar cada hallazgo con MoSCoW."

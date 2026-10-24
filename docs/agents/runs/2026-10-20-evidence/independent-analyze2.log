@@ -1,0 +1,6 @@
+Analyzing final...                                              
+
+   info • This class (or a class which this class inherits from) is marked as '@immutable', but one or more of its instance fields are not final: PieChartSample2.asignatura • lib/src/screens/PieChart.dart:8:7 • must_be_immutable
+   info • Name types using UpperCamelCase • lib/src/util/parseDouble.dart:1:7 • camel_case_types
+
+2 issues found. (ran in 2.0s)

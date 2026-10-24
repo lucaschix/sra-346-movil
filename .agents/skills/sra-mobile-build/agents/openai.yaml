@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sra Mobile Build"
+  short_description: "Procedimientos específicos de SRA móvil"
+  default_prompt: "Usa $sra-mobile-build para trabajar en SRA móvil."

@@ -1,0 +1,15 @@
+# Delegación
+- ID / rol:
+- Objetivo concreto:
+- Modo: lectura / implementación / verificación
+- Checkout y base:
+- Archivos exactos permitidos (también tests/fixtures):
+- Archivos de consulta:
+- Archivos reservados por otros:
+- Skill y referencias a cargar:
+- Contrato y evidencia disponible:
+- Dependencias / bloqueo:
+- Criterios de aceptación observables:
+- Validaciones a ejecutar:
+- Formato de entrega: causa y evidencia, cambios por archivo, comandos/códigos, resultados por criterio, riesgos, pendientes y liberación de paths.
+- Restricciones: sin subdelegación, sin cambios fuera de alcance, sin secretos ni operaciones productivas.

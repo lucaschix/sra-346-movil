@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sra Mobile Verify"
+  short_description: "Procedimientos específicos de SRA móvil"
+  default_prompt: "Usa $sra-mobile-verify para trabajar en SRA móvil."

@@ -1,0 +1,49 @@
+buildscript {
+    ext.kotlin_version = '1.3.50'
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+
+    // barcode_scan 2.0.1 depends on me.dm7.barcodescanner 1.9.13, which was only
+    // published to JCenter and is no longer resolvable. 1.9.8 (Maven Central) has
+    // the same scanner code; 1.9.13 only bumped library versions, so zxing core is
+    // kept at the 3.3.3 that 1.9.13 shipped with.
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'me.dm7.barcodescanner') {
+                details.useVersion '1.9.8'
+                details.because 'JCenter-only 1.9.13 is unavailable; 1.9.8 has the same scanner code'
+            }
+            if (details.requested.group == 'com.google.zxing' && details.requested.name == 'core') {
+                details.useVersion '3.3.3'
+                details.because 'zxing core version shipped with barcodescanner 1.9.13'
+            }
+        }
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

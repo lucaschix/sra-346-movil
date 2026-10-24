@@ -1,0 +1,54 @@
+
+00:00 +0: loading /work/final/test/app_test.dart                                                                                                                                                       
+00:01 +0: loading /work/final/test/app_test.dart                                                                                                                                                       
+00:01 +0: loading /work/final/test/widgets/login_page_test.dart                                                                                                                                        
+00:01 +0: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +1: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +2: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +3: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +4: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +5: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +6: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +7: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +8: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +9: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                             
+00:01 +10: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                            
+00:01 +11: /work/final/test/app_test.dart: startup waits for complete session before opening protected page                                                                                            
+00:01 +12: /work/final/test/services/login_service_test.dart: matricula never requests HTTP without a complete local session                                                                           
+00:01 +13: /work/final/test/app_test.dart: nonempty legacy token cannot bypass invalid session                                                                                                         
+00:01 +14: /work/final/test/app_test.dart: nonempty legacy token cannot bypass invalid session                                                                                                         
+00:01 +15: loading /work/final/test/widgets/qr_scan_test.dart                                                                                                                                          
+00:01 +15: /work/final/test/services/api_service_test.dart: 400/401/403/500 preserve failure categories without sensitive bodies                                                                       
+00:01 +16: /work/final/test/app_test.dart: failed startup session read opens sign in                                                                                                                   
+00:01 +17: /work/final/test/app_test.dart: failed startup session read opens sign in                                                                                                                   
+00:01 +18: /work/final/test/app_test.dart: failed startup session read opens sign in                                                                                                                   
+00:01 +19: loading /work/final/test/widgets/qr_scan_test.dart                                                                                                                                          
+00:01 +19: /work/final/test/app_test.dart: missing RUT prevents courses request and clears protected route                                                                                             
+00:01 +20: /work/final/test/app_test.dart: missing RUT prevents courses request and clears protected route                                                                                             
+00:02 +20: /work/final/test/app_test.dart: missing RUT prevents courses request and clears protected route                                                                                             
+00:02 +21: /work/final/test/widgets/qr_scan_test.dart: cancel and permission denial never resolve enrollment                                                                                           
+00:02 +22: /work/final/test/widgets/qr_scan_test.dart: cancel and permission denial never resolve enrollment                                                                                           
+00:02 +23: /work/final/test/widgets/drawer_test.dart: logout waits, excludes duplicates and removes protected routes                                                                                   
+00:02 +24: /work/final/test/widgets/drawer_test.dart: logout waits, excludes duplicates and removes protected routes                                                                                   
+00:02 +25: /work/final/test/widgets/drawer_test.dart: logout waits, excludes duplicates and removes protected routes                                                                                   
+00:02 +26: /work/final/test/widgets/drawer_test.dart: logout waits, excludes duplicates and removes protected routes                                                                                   
+00:02 +27: /work/final/test/widgets/drawer_test.dart: logout waits, excludes duplicates and removes protected routes                                                                                   
+00:02 +28: /work/final/test/widgets/drawer_test.dart: logout waits, excludes duplicates and removes protected routes                                                                                   
+00:02 +29: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +30: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +31: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +32: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +33: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +34: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +35: /work/final/test/widgets/login_page_test.dart: login waits and excludes duplicate taps                                                                                                      
+00:02 +36: /work/final/test/widgets/confirmation_attendance_test.dart: cancel pops existing route and does not register                                                                                
+00:02 +37: /work/final/test/widgets/login_page_test.dart: login completion after dispose is safe                                                                                                       
+00:02 +38: /work/final/test/widgets/confirmation_attendance_test.dart: completion after disposal is safe                                                                                               
+00:02 +39: /work/final/test/widgets/login_page_test.dart: login rejection is visible and releases loading                                                                                              
+00:02 +40: /work/final/test/widgets/login_page_test.dart: login rejection is visible and releases loading                                                                                              
+00:03 +40: /work/final/test/widgets/login_page_test.dart: login rejection is visible and releases loading                                                                                              
+00:03 +41: /work/final/test/widgets/confirmation_attendance_test.dart: HTTP 401 is a known rejection without automatic retry                                                                           
+00:03 +42: /work/final/test/widgets/confirmation_attendance_test.dart: HTTP 401 is a known rejection without automatic retry                                                                           
+00:03 +42: /work/final/test/widgets/confirmation_attendance_test.dart: HTTP 403 is a known rejection without automatic retry                                                                           
+00:03 +43: /work/final/test/widgets/confirmation_attendance_test.dart: HTTP 403 is a known rejection without automatic retry                                                                           
+00:03 +43: All tests passed!                                                                                                                                                                           

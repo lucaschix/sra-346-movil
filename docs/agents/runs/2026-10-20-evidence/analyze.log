@@ -1,0 +1,10 @@
+Analyzing app...                                                
+
+   info • Unused import: 'package:shared_preferences/shared_preferences.dart' • lib/main.dart:2:8 • unused_import
+   info • The value of the field '_isIos' isn't used • lib/src/screens/LoginPage.dart:30:8 • unused_field
+   info • This class (or a class which this class inherits from) is marked as '@immutable', but one or more of its instance fields are not final: PieChartSample2.asignatura • lib/src/screens/PieChart.dart:8:7 • must_be_immutable
+   info • Unused import: 'package:sra_346_movil/src/models/qr.dart' • lib/src/screens/QRLectorComponent.dart:6:8 • unused_import
+   info • Unused import: 'package:sra_346_movil/src/services/jwtService.dart' • lib/src/screens/QRLectorComponent.dart:10:8 • unused_import
+   info • Name types using UpperCamelCase • lib/src/util/parseDouble.dart:1:7 • camel_case_types
+
+6 issues found. (ran in 5.9s)

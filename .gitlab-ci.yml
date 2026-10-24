@@ -1,0 +1,47 @@
+# Flutter 1.12.13+hotfix.9 is the version that resolves pubspec.lock without changes.
+default:
+  image: cirrusci/flutter:v1.12.13-hotfix.9@sha256:b82b48daac2dba80c78f153e39d0619995322ae6a09da7068272d86f3e1a281d
+
+stages:
+  - analyze
+  - build
+
+variables:
+  PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle-home"
+
+# Run on merge requests and on branch pushes, without duplicating pipelines
+# for a branch that already has an open merge request.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+cache:
+  key:
+    files:
+      - pubspec.lock
+  paths:
+    - .pub-cache
+    - .gradle-home
+
+before_script:
+  - flutter pub get
+
+# This Flutter version treats info-level findings as fatal; they are reported, not blocking.
+analyze:
+  stage: analyze
+  script:
+    - flutter analyze
+  allow_failure: true
+
+build_apk:
+  stage: build
+  script:
+    - flutter build apk --debug
+  artifacts:
+    paths:
+      - build/app/outputs/apk/debug/app-debug.apk
+    expire_in: 1 week

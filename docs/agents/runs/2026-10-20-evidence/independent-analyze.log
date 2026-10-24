@@ -1,0 +1,21 @@
+Flutter 1.12.13+hotfix.9 • channel unknown • unknown source
+Framework • revision f139b11009 (7 years ago) • 2020-03-30 13:57:30 -0700
+Engine • revision af51afceb8
+Tools • Dart 2.7.2
+openjdk version "1.8.0_222"
+OpenJDK Runtime Environment (build 1.8.0_222-8u222-b10-1ubuntu1~18.04.1-b10)
+OpenJDK 64-Bit Server VM (build 25.222-b10, mixed mode)
+36ad4337f91a7eebfcf5eb52c3818d44a98d3d6f30c61c4cec250d8107136a35  pubspec.lock
+Analyzing final...                                              
+
+   info • The for, if, and spread elements weren't supported until version 2.3.0, but this code is required to be able to run on earlier versions • lib/src/screens/ConfirmationAttendance.dart:84:11 • sdk_version_ui_as_code
+   info • The for, if, and spread elements weren't supported until version 2.3.0, but this code is required to be able to run on earlier versions • lib/src/screens/ConfirmationAttendance.dart:85:11 • sdk_version_ui_as_code
+   info • This class (or a class which this class inherits from) is marked as '@immutable', but one or more of its instance fields are not final: PieChartSample2.asignatura • lib/src/screens/PieChart.dart:8:7 • must_be_immutable
+   info • Name types using UpperCamelCase • lib/src/util/parseDouble.dart:1:7 • camel_case_types
+   info • Dead code • test/services/login_service_test.dart:73:73 • dead_code
+  error • The method 'textContaining' isn't defined for the class 'CommonFinders' • test/widgets/confirmation_attendance_test.dart:45:17 • undefined_method
+  error • The method 'textContaining' isn't defined for the class 'CommonFinders' • test/widgets/confirmation_attendance_test.dart:56:17 • undefined_method
+  error • The method 'textContaining' isn't defined for the class 'CommonFinders' • test/widgets/confirmation_attendance_test.dart:66:17 • undefined_method
+  error • The method 'textContaining' isn't defined for the class 'CommonFinders' • test/widgets/confirmation_attendance_test.dart:67:17 • undefined_method
+
+9 issues found. (ran in 3.9s)
