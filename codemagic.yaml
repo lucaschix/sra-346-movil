@@ -1,0 +1,48 @@
+# Diagnóstico manual: no firma, publica ni instala la aplicación.
+workflows:
+  ios-diagnostico:
+    name: SRA - diagnóstico iOS sin firma
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: 1.12.13+hotfix.9
+      xcode: latest
+    scripts:
+      - name: Registrar y verificar entorno
+        script: |
+          set -euo pipefail
+          mkdir -p diagnostics
+          flutter --version | tee diagnostics/flutter-version.txt
+          flutter --version --machine > diagnostics/flutter-version.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          info = json.loads(Path('diagnostics/flutter-version.json').read_text())
+          assert info['frameworkVersion'] == '1.12.13+hotfix.9', info
+          assert info['dartSdkVersion'].split()[0] == '2.7.2', info
+          PY
+          xcodebuild -version | tee diagnostics/xcode-version.txt
+          pod --version | tee diagnostics/cocoapods-version.txt
+          uname -m | tee diagnostics/architecture.txt
+      - name: Resolver dependencias conservando el lockfile
+        script: |
+          set -euo pipefail
+          shasum -a 256 pubspec.lock | tee diagnostics/lock-before.txt
+          set +e
+          flutter pub get 2>&1 | tee diagnostics/pub-get.log
+          pub_status=${PIPESTATUS[0]}
+          set -e
+          shasum -a 256 pubspec.lock | tee diagnostics/lock-after.txt
+          git diff -- pubspec.lock > diagnostics/lock.diff
+          if ! cmp -s diagnostics/lock-before.txt diagnostics/lock-after.txt; then
+            echo 'ERROR: pub get modificó pubspec.lock; revisar diagnostics/lock.diff.'
+            exit 1
+          fi
+          exit "$pub_status"
+      - name: Compilar iOS debug sin firma
+        script: |
+          set -euo pipefail
+          flutter build ios --debug --no-codesign 2>&1 | tee diagnostics/ios-build.log
+    artifacts:
+      - diagnostics/**
+      - build/ios/iphoneos/*.app
