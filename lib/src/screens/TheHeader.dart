@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sra_346_movil/src/screens/QRLectorComponent.dart';
 
-class TheHeader extends StatelessWidget with PreferredSizeWidget{
+class TheHeader extends StatelessWidget implements PreferredSizeWidget {
   final qrScan = QrScan();
   final String title;
   TheHeader(this.title);
@@ -17,7 +17,6 @@ class TheHeader extends StatelessWidget with PreferredSizeWidget{
     );
   }
 
- @override
+  @override
   Size get preferredSize => Size.fromHeight(kToolbarHeight);
-  
 }

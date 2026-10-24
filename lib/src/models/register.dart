@@ -3,25 +3,29 @@ class Register {
   String estadoAsistencia;
   String numeroMatricula;
   String token;
-  bool isExpanded=false;
+  bool isExpanded = false;
 
-  Register({this.idClase,this.estadoAsistencia,this.numeroMatricula,this.token});
-  
+  Register({
+    this.idClase = 0,
+    this.estadoAsistencia = '',
+    this.numeroMatricula = '',
+    this.token = '',
+  });
+
   factory Register.fromJson(Map<String, dynamic> json) {
     return Register(
       idClase: json['idClase'],
       numeroMatricula: json['numeroMatricula'],
-      token:json['token']
+      token: json['token'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'idClase': idClase,
-      'numeroMatricula':numeroMatricula,
+      'numeroMatricula': numeroMatricula,
       'token': token,
       //'estadoAsistencia':estadoAsistencia
     };
   }
-
 }

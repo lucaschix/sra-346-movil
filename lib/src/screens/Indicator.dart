@@ -8,10 +8,10 @@ class Indicator extends StatelessWidget {
   final Color textColor;
 
   const Indicator({
-    Key key,
-    this.color,
-    this.text,
-    this.isSquare,
+    Key? key,
+    required this.color,
+    required this.text,
+    required this.isSquare,
     this.size = 16,
     this.textColor = const Color(0xff505050),
   }) : super(key: key);
@@ -28,13 +28,15 @@ class Indicator extends StatelessWidget {
             color: color,
           ),
         ),
-        const SizedBox(
-          width: 4,
-        ),
+        const SizedBox(width: 4),
         Text(
           text,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
-        )
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
       ],
     );
   }

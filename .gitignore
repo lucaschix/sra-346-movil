@@ -80,3 +80,6 @@
 /.agents/
 /.codex/
 /docs/agents/
+
+# Metadatos de plugins generados por Flutter moderno
+.flutter-plugins-dependencies

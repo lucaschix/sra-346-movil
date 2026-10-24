@@ -1,56 +1,73 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 import 'package:sra_346_movil/src/errors/appException.dart';
-
 import 'jwtService.dart';
 
 class ApiService {
-  String baseUrl = "http://192.168.1.82:8080";
+  ApiService({
+    http.Client? client,
+    String? baseUrl,
+    Future<String> Function()? tokenProvider,
+  }) : _client = client ?? http.Client(),
+       baseUrl =
+           baseUrl ??
+           const String.fromEnvironment(
+             'SRA_API_BASE_URL',
+             defaultValue: 'http://192.168.1.82:8080',
+           ),
+       _tokenProvider = tokenProvider ?? JwtService().getToken;
 
-  headers() async {
-    final token = await JwtService().getToken();
+  final http.Client _client;
+  final String baseUrl;
+  final Future<String> Function() _tokenProvider;
+
+  Future<Map<String, String>> headers() async {
+    final token = await _tokenProvider();
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
-  get(params) async {
-    final _headers = await headers();
-    final response =
-        await http.get('${this.baseUrl}/$params', headers: _headers);
-    return _returnResponse(response);
+  Future<dynamic> get(String params) async {
+    return _returnResponse(
+      await _client.get(
+        Uri.parse('$baseUrl/$params'),
+        headers: await headers(),
+      ),
+    );
   }
 
-  post(params, {data = "{}"}) async {
-    final _headers = await headers();
-    final response = await http.post('${this.baseUrl}/$params',
-        body: jsonEncode(data), headers: _headers);
-    return _returnResponse(response);
+  Future<dynamic> post(
+    String params, {
+    dynamic data = const <String, dynamic>{},
+  }) async {
+    return _returnResponse(
+      await _client.post(
+        Uri.parse('$baseUrl/$params'),
+        body: jsonEncode(data),
+        headers: await headers(),
+      ),
+    );
   }
 
   dynamic _returnResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
-        var responseJson;
         try {
-          responseJson = json.decode(response.body.toString());
-        } catch (e) {
-          responseJson = response.body.toString();
+          return jsonDecode(response.body);
+        } on FormatException {
+          return response.body;
         }
-        print("Response API Service");
-        print(responseJson);
-        return responseJson;
       case 400:
-        throw BadRequestException(response.body.toString());
+        throw BadRequestException(response.body);
       case 401:
       case 403:
-        throw UnauthorisedException(response.body.toString());
-      case 500:
+        throw UnauthorisedException(response.body);
       default:
         throw FetchDataException(
-            'Error occured while Communication with Server with StatusCode : ${response.statusCode}');
+          'Error de comunicación: HTTP ${response.statusCode}',
+        );
     }
   }
 }

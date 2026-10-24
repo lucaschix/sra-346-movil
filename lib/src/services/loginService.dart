@@ -7,8 +7,9 @@ class LoginService {
 
   signIn(String email, pass) async {
     // User eo = new User(usuEmail: email, usuClave: pass);
-    var jsonResponse =
-        await apiService.post("api/login?username=$email&password=$pass");
+    var jsonResponse = await apiService.post(
+      "api/login?username=$email&password=$pass",
+    );
     try {
       SharedPreferences sharedPreferences =
           await SharedPreferences.getInstance();
@@ -29,10 +30,10 @@ class LoginService {
   changePassword(token, newPassword) async {
     try {
       var response = await apiService.post('api/validar_token?token=$token');
-      print(response.toString());
       if (response["validezToken"]) {
-        return await apiService
-            .post('api/recuperar?token=$token&nuevaClave=$newPassword');
+        return await apiService.post(
+          'api/recuperar?token=$token&nuevaClave=$newPassword',
+        );
       }
     } catch (e) {
       print(e.toString());
@@ -43,13 +44,14 @@ class LoginService {
   //TODO Por verificar funcionamiento, cambio interno error 500 si clave actual es rechazada
   changePasswordInterno(String actualPassword, newPassword) async {
     try {
-      var response = await apiService
-          .post('api/cambio_interno?claveActual=$actualPassword');
-      print(response.toString());
+      var response = await apiService.post(
+        'api/cambio_interno?claveActual=$actualPassword',
+      );
       if (response["token"] != null) {
         String token = response["token"];
-        return await apiService
-            .post('api/recuperar?token=$token&nuevaClave=$newPassword');
+        return await apiService.post(
+          'api/recuperar?token=$token&nuevaClave=$newPassword',
+        );
       }
     } catch (e) {
       print(e.toString());
@@ -74,9 +76,11 @@ class LoginService {
   getMatricula(int asignaturaID) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     try {
-      int rutDigitos = sharedPreferences.get("rut");
+      final rutDigitos = sharedPreferences.getInt("rut");
+      if (rutDigitos == null) throw StateError('La sesión no contiene RUT');
       var responseMat = await apiService.get(
-          'asistencia/estudiante/matricula/?asignatura=$asignaturaID&estRut=$rutDigitos');
+        'asistencia/estudiante/matricula/?asignatura=$asignaturaID&estRut=$rutDigitos',
+      );
       return responseMat["matricula"];
     } catch (e) {
       print(e.toString());

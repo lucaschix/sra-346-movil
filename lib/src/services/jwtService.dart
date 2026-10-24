@@ -1,25 +1,20 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class JwtService {
-  getToken() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String token = sharedPreferences.get("token") ?? "";
-    return token;
-  }
-  getRut() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    int rut = sharedPreferences.get("rut") ?? "";
-    return rut;
-  }
-  getUsername() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String token = sharedPreferences.get("username") ?? "";
-    return token;
-  }
+  Future<String> getToken() async =>
+      (await SharedPreferences.getInstance()).getString('token') ?? '';
 
-  removeToken() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    sharedPreferences.remove("token");
+  Future<int?> getRut() async =>
+      (await SharedPreferences.getInstance()).getInt('rut');
+
+  Future<String> getUsername() async =>
+      (await SharedPreferences.getInstance()).getString('username') ?? '';
+
+  Future<String> removeToken() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove('token');
+    await preferences.remove('rut');
+    await preferences.remove('username');
     return getToken();
   }
 }

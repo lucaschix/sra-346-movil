@@ -1,96 +1,51 @@
-# Diagnóstico manual: no firma, publica ni instala la aplicación.
+# Rama migration/ios-26: comprobación release sin firma ni publicación.
 workflows:
-  ios-diagnostico:
-    name: SRA - diagnóstico iOS sin firma
+  ios-26-release:
+    name: SRA - iOS 26 release sin firma
     instance_type: mac_mini_m2
     max_build_duration: 30
     environment:
-      # Imagen documentada con macOS 14.7 para diagnosticar el SDK legado.
-      # Solo compilación local sin firma; no cumple el SDK actual de TestFlight.
-      xcode: "16.0"
+      xcode: "26.3"
+      vars:
+        SRA_API_BASE_URL: "http://192.168.1.82:8080"
     scripts:
-      - name: Instalar Flutter legado desde el repositorio oficial
+      - name: Instalar Flutter 3.38.10 fijado
         script: |
           set -euo pipefail
-          mkdir -p diagnostics
-          if [ "$(uname -m)" = arm64 ]; then
-            if ! arch -x86_64 /usr/bin/true; then
-              sudo softwareupdate --install-rosetta --agree-to-license
-            fi
-            arch -x86_64 /usr/bin/true
-          fi
-          sra_flutter_dir="$(mktemp -d "${TMPDIR:-/tmp}/sra-flutter.XXXXXX")"
-          git clone --depth 1 --branch v1.12.13+hotfix.9 \
-            https://github.com/flutter/flutter.git "$sra_flutter_dir"
-          test "$(git -C "$sra_flutter_dir" rev-parse HEAD)" = f139b11009aeb8ed2a3a3aa8b0066e482709dde3
+          sra_flutter_dir="$(mktemp -d "${TMPDIR:-/tmp}/sra-flutter-modern.XXXXXX")"
+          git clone --depth 1 --branch 3.38.10 https://github.com/flutter/flutter.git "$sra_flutter_dir"
+          test "$(git -C "$sra_flutter_dir" rev-parse HEAD)" = c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
           printf 'PATH=%s/bin:%s\n' "$sra_flutter_dir" "$PATH" >> "$CM_ENV"
-      - name: Registrar y verificar entorno
+      - name: Verificar entorno moderno
         script: |
           set -euo pipefail
           mkdir -p diagnostics
-          uname -m > diagnostics/architecture.txt
-          sw_vers > diagnostics/macos-version.txt
-          command -v tar > diagnostics/tar-path.txt
-          tar --version > diagnostics/tar-version.txt 2>&1
-          sra_flutter_bin="$(command -v flutter)"
-          sra_sdk_root="$(dirname "$(dirname "$sra_flutter_bin")")"
-          set +e
-          arch -x86_64 /bin/bash "$sra_flutter_bin" --version > diagnostics/flutter-bootstrap.log 2>&1
-          bootstrap_status=$?
-          set -e
-          cat diagnostics/flutter-bootstrap.log
-          if [ "$bootstrap_status" -ne 0 ]; then
-            echo 'El arranque falló. Ejecutando pub con trazas dentro del SDK, sin modificar SRA.'
-            set +e
-            (
-              cd "$sra_sdk_root/packages/flutter_tools"
-              arch -x86_64 /bin/bash "$sra_sdk_root/bin/cache/dart-sdk/bin/pub" \
-                --trace --verbosity=all upgrade --no-precompile
-            ) > diagnostics/flutter-pub-trace.log 2>&1
-            trace_status=$?
-            set -e
-            printf 'pub trace exit code: %s\n' "$trace_status"
-            tail -n 180 diagnostics/flutter-pub-trace.log
-            exit "$bootstrap_status"
-          fi
-          cp diagnostics/flutter-bootstrap.log diagnostics/flutter-version.txt
           flutter --version --machine > diagnostics/flutter-version.json
           python3 - <<'PY'
           import json
           from pathlib import Path
           info = json.loads(Path('diagnostics/flutter-version.json').read_text())
-          assert info['frameworkVersion'] == '1.12.13+hotfix.9', info
-          assert info['dartSdkVersion'].split()[0] == '2.7.2', info
+          assert info['frameworkVersion'] == '3.38.10', info
           PY
           xcodebuild -version | tee diagnostics/xcode-version.txt
-          pod --version | tee diagnostics/cocoapods-version.txt
-          uname -m | tee diagnostics/architecture.txt
-      - name: Resolver dependencias conservando el lockfile
+          sw_vers | tee diagnostics/macos-version.txt
+      - name: Resolver dependencias fijadas
         script: |
           set -euo pipefail
-          shasum -a 256 pubspec.lock | tee diagnostics/lock-before.txt
-          set +e
-          flutter pub get 2>&1 | tee diagnostics/pub-get.log
-          pub_status=${PIPESTATUS[0]}
-          set -e
-          shasum -a 256 pubspec.lock | tee diagnostics/lock-after.txt
-          git diff -- pubspec.lock > diagnostics/lock.diff
-          if ! cmp -s diagnostics/lock-before.txt diagnostics/lock-after.txt; then
-            echo 'ERROR: pub get modificó pubspec.lock; revisar diagnostics/lock.diff.'
-            exit 1
-          fi
-          exit "$pub_status"
-      - name: Ajustar stub debug legado para Xcode 16
+          flutter pub get --enforce-lockfile 2>&1 | tee diagnostics/pub-get.log
+          git diff --exit-code -- pubspec.lock
+      - name: Analizar y probar la migración
         script: |
           set -euo pipefail
-          sra_sdk_root="$(dirname "$(dirname "$(command -v flutter)")")"
-          python3 ci/patch_flutter_xcode_backend.py "$sra_sdk_root" | tee diagnostics/sdk-compatibility.log
-          bash -n "$sra_sdk_root/packages/flutter_tools/bin/xcode_backend.sh"
-          git -C "$sra_sdk_root" diff -- packages/flutter_tools/bin/xcode_backend.sh > diagnostics/sdk-compatibility.diff
-      - name: Compilar iOS debug sin firma
+          flutter analyze 2>&1 | tee diagnostics/analyze.log
+          flutter test --reporter expanded 2>&1 | tee diagnostics/test.log
+      - name: Compilar release iOS sin firma
         script: |
           set -euo pipefail
-          flutter build ios --debug --no-codesign 2>&1 | tee diagnostics/ios-build.log
+          flutter build ios --release --no-codesign \
+            --dart-define="SRA_API_BASE_URL=$SRA_API_BASE_URL" \
+            2>&1 | tee diagnostics/ios-release-build.log
+          test -s build/ios/iphoneos/Runner.app/Runner
     artifacts:
       - diagnostics/**
       - build/ios/iphoneos/*.app

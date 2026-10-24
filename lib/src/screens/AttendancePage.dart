@@ -17,15 +17,15 @@ class AttendancePage extends StatelessWidget {
     final GlobalKey<ScaffoldState> _key = GlobalKey<ScaffoldState>();
 
     Future<List<Asignatura>> _getData() async {
-      int rut=await JwtService().getRut();
-      print(rut);
+      final rut = await JwtService().getRut();
+      if (rut == null) throw StateError('La sesión no contiene RUT');
       return AsignaturaService().getAll(rut);
     }
 
     return Scaffold(
       key: _key,
       appBar: TheHeader(this.title),
-     // floatingActionButton: qrScan,
+      // floatingActionButton: qrScan,
       endDrawer: DrawerPage(),
       body: SingleChildScrollView(
         child: Container(
@@ -34,12 +34,11 @@ class AttendancePage extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               Container(
-                  padding: EdgeInsets.only(top: 20),
-                  height: MediaQuery.of(context).size.height,
-                  width: double.infinity,
-                  child: AttendanceExpansionPanel(
-                    generateItems: _getData(),
-                  )),
+                padding: EdgeInsets.only(top: 20),
+                height: MediaQuery.of(context).size.height,
+                width: double.infinity,
+                child: AttendanceExpansionPanel(generateItems: _getData()),
+              ),
             ],
           ),
         ),

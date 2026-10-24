@@ -20,73 +20,73 @@ class ConfirmationAttendance extends StatelessWidget {
     var token = this.codQr["token"];
     var estado = "ATRASADO";
     var registro = Register(
-        numeroMatricula: this.username,
-        token: token,
-        idClase: idClase,
-        estadoAsistencia: estado);
+      numeroMatricula: this.username,
+      token: token,
+      idClase: idClase,
+      estadoAsistencia: estado,
+    );
     return Scaffold(
-        key: _key,
-        appBar: TheHeader(this.title),
-        body: Column(
-          children: <Widget>[
-            SizedBox(height: 30),
-            _row("Asignatura", asignatura),
-            SizedBox(height: 30),
-            _row("Tu Matricula", this.username),
-            SizedBox(height: 30),
-            _row("Fecha", date),
-            SizedBox(height: 30),
-            _rowBtn(context, registro)
-          ],
-        ));
+      key: _key,
+      appBar: TheHeader(this.title),
+      body: Column(
+        children: <Widget>[
+          SizedBox(height: 30),
+          _row("Asignatura", asignatura),
+          SizedBox(height: 30),
+          _row("Tu Matricula", this.username),
+          SizedBox(height: 30),
+          _row("Fecha", date),
+          SizedBox(height: 30),
+          _rowBtn(context, registro),
+        ],
+      ),
+    );
   }
 
   _row(col1, col2) => Container(
-        padding: EdgeInsets.all(12.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(col1, style: TextStyle(fontWeight: FontWeight.bold)),
-            Text(col2)
-          ],
-        ),
-      );
+    padding: EdgeInsets.all(12.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(col1, style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(col2),
+      ],
+    ),
+  );
 
   _rowBtn(context, registro) => Container(
-        padding: EdgeInsets.all(40.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            new RaisedButton(
-              padding: const EdgeInsets.all(8.0),
-              textColor: Colors.white,
-              color: Colors.blue,
-              onPressed: () async {
-                var response = await RegisterService().add(registro);
-                if (!response.toString().contains("Error")) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => AttendancePage()),
-                  );
-                } else {
-                  ErrorNotification().alert(context, response,AttendancePage());
-                }
-              },
-              child: new Text("Confirmar"),
-            ),
-            new RaisedButton(
-              onPressed: () => Navigator.push(
+    padding: EdgeInsets.all(40.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        new MaterialButton(
+          padding: const EdgeInsets.all(8.0),
+          textColor: Colors.white,
+          color: Colors.blue,
+          onPressed: () async {
+            var response = await RegisterService().add(registro);
+            if (!response.toString().contains("Error")) {
+              Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => AttendancePage()),
-              ),
-              textColor: Colors.white,
-              color: Colors.red,
-              padding: const EdgeInsets.all(8.0),
-              child: new Text(
-                "Cancelar",
-              ),
-            ),
-          ],
+              );
+            } else {
+              ErrorNotification().alert(context, response, AttendancePage());
+            }
+          },
+          child: new Text("Confirmar"),
         ),
-      );
+        new MaterialButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AttendancePage()),
+          ),
+          textColor: Colors.white,
+          color: Colors.red,
+          padding: const EdgeInsets.all(8.0),
+          child: new Text("Cancelar"),
+        ),
+      ],
+    ),
+  );
 }

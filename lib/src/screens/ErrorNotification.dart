@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:sra_346_movil/src/errors/appException.dart';
 
@@ -34,7 +33,7 @@ class ErrorNotification {
             MaterialPageRoute(builder: (context) => to),
           ),
           width: 120,
-        )
+        ),
       ],
     ).show();
   }

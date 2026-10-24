@@ -1,35 +1,22 @@
-# Runtime and dependency record
+# Entorno de la migración iOS 26
 
-Recorded on 2026-10-19 for the reproducible build (.gitlab-ci.yml).
+| Componente | Versión |
+| --- | --- |
+| Flutter | 3.38.10, commit c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80 |
+| Dart | 3.10.9 |
+| Xcode del flujo remoto | 26.3 |
+| Deployment target | iOS 15.0 |
+| Dispositivo previsto | iPhone 11, iOS 26.5.2 |
 
-## Runtimes
+Las dependencias de pubspec.yaml están fijadas; pubspec.lock conserva hashes
+SHA-256. Ejecutar `flutter pub get --enforce-lockfile`.
 
-| Component | Version | Source | Image digest at recording |
-|-----------|---------|--------|---------------------------|
-| Flutter | 1.12.13+hotfix.9 | `cirrusci/flutter:v1.12.13-hotfix.9` | `sha256:b82b48daac2dba80c78f153e39d0619995322ae6a09da7068272d86f3e1a281d` |
-| Dart | 2.7.2 | bundled with Flutter | — |
-| JDK (Android build) | 1.8.0_222 | bundled in the image | — |
-| Gradle | 5.6.2 | `android/gradle/wrapper/gradle-wrapper.properties` | — |
-| Android Gradle Plugin | 3.5.0 | `android/build.gradle` | — |
-| Kotlin | 1.3.50 | `android/build.gradle` | — |
-| Android SDK | compile/target 28, min 16 | `android/app/build.gradle` | — |
+Verificación local en Linux: `flutter analyze` PASS; `flutter test` PASS (14).
+Build release iOS, firma, cámara y dispositivo: NOT_RUN.
 
-Flutter 1.12.13+hotfix.9 is the version that resolves `pubspec.lock` without changes; Flutter 1.22.6
-rewrites the SDK-pinned packages. The image runs as user `cirrus`, not root, and is pinned by digest in
-`.gitlab-ci.yml` because it is no longer maintained.
+Los runtimes de Android (JDK/Gradle/AGP) de esta copia siguen siendo los del
+proyecto legado y no se validan con el SDK moderno. La migración Android es
+una tarea separada. No usar el antiguo Docker Flutter 1.12 para esta rama.
 
-## Dependency resolution
-
-- Lockfile: `pubspec.lock`, 40 packages, SDK constraints `dart: ">=2.4.0 <3.0.0"` and
-  `flutter: ">=1.12.13+hotfix.4 <2.0.0"`. SHA-256 prefix at recording: `36ad4337f91a7eeb`.
-- `shared_preferences` is pinned to 0.5.6+3 in `pubspec.yaml` (formerly the dynamic constraint `any`),
-  matching the version in the lockfile.
-- `me.dm7.barcodescanner` 1.9.13 (needed by `barcode_scan` 2.0.1) was only published to JCenter.
-  `android/build.gradle` maps it to 1.9.8 from Maven Central and keeps `com.google.zxing:core` at 3.3.3.
-
-## Checks
-
-- `flutter build apk --debug` succeeds.
-- `flutter analyze` reports 6 info-level findings; this Flutter version treats them as fatal,
-  so the CI job is allowed to fail.
-- There are no tests; the template counter test was removed because it never mounted a widget.
+El entorno reproducible de Flutter 1.12.13 / Dart 2.7.2 queda registrado en main,
+commit 9cc8968, incluyendo el flujo debug con Xcode 16.0 y el workaround bitcode.

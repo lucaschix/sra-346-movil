@@ -1,81 +1,107 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:barcode_scan/barcode_scan.dart';
-import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:sra_346_movil/src/models/qr.dart';
-import 'package:sra_346_movil/src/screens/AttendancePage.dart';
 import 'package:sra_346_movil/src/screens/ConfirmationAttendance.dart';
-import 'package:sra_346_movil/src/screens/ErrorNotification.dart';
-import 'package:sra_346_movil/src/services/jwtService.dart';
 import 'package:sra_346_movil/src/services/loginService.dart';
 
 class QrScan extends StatefulWidget {
-  final barcode;
-
-  const QrScan({Key key, this.barcode}) : super(key: key);
-  _QrScanState createState() => _QrScanState();
+  const QrScan({super.key});
+  @override
+  State<QrScan> createState() => _QrScanState();
 }
 
 class _QrScanState extends State<QrScan> {
-  String _barcode = "";
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-        leading: Icon(Icons.add_a_photo),
-        title: Text('Ingresar a clase'),
-        onTap: () async {
-          await scan();
-          await next();
-        });
-  }
+  bool _busy = false;
 
-  Future next() async {
+  Future<void> _scan() async {
+    if (_busy) return;
+    setState(() => _busy = true);
     try {
-      var qrJson = jsonDecode(this._barcode);
-      if (qrJson["estadoActivo"]) {
-        int asignaturaID = qrJson["asignaturaId"];
-        String matricula =
-            await LoginService().getMatricula(asignaturaID);
-        Navigator.push(
+      final value = await Navigator.of(
+        context,
+      ).push<String>(MaterialPageRoute(builder: (_) => const QrScannerPage()));
+      if (value == null || !mounted) return;
+      final qr = QR.fromScan(value);
+      final matricula = await LoginService().getMatricula(qr.asignaturaId);
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ConfirmationAttendance(
+            codQr: qr.toJson(),
+            username: matricula.toString(),
+          ),
+        ),
+      );
+    } on FormatException catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(
           context,
-          MaterialPageRoute(
-              builder: (context) => ConfirmationAttendance(
-                    codQr: qrJson,
-                    username: matricula,
-                  )),
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo consultar la matrícula. Revisa tu conexión y sesión.',
+            ),
+          ),
         );
-      }
-    } on FormatException catch (e) {
-      print("Código inválido: " + e.toString());
-      ErrorNotification()
-          .alert(context, "Código QR no válido", AttendancePage());
-    } on TypeError catch (e) {
-      print(e);
-      ErrorNotification().alert(context, this._barcode, AttendancePage());
-    } catch (e) {
-      print("Error no identificado: " + e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future scan() async {
-    try {
-      String barcode = await BarcodeScanner.scan();
-      setState(() => this._barcode = barcode);
-    } on PlatformException catch (e) {
-      if (e.code == BarcodeScanner.CameraAccessDenied) {
-        setState(() {
-          this._barcode = 'Permiso para acceso a la cámara no concedido';
-        });
-      } else {
-        setState(() => this._barcode = 'Error desconocido $e');
-      }
-    } on FormatException {
-      setState(() => this._barcode =
-          'Nulo, el usuario presionó el botón de volver antes de escanear algo)');
-    } catch (e) {
-      setState(() => this._barcode = 'Error desconocido : $e');
-    }
-    print(this._barcode);
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.add_a_photo),
+    title: Text(_busy ? 'Consultando clase…' : 'Ingresar a clase'),
+    onTap: _busy ? null : _scan,
+  );
+}
+
+class QrScannerPage extends StatefulWidget {
+  const QrScannerPage({super.key});
+  @override
+  State<QrScannerPage> createState() => _QrScannerPageState();
+}
+
+class _QrScannerPageState extends State<QrScannerPage> {
+  final _controller = MobileScannerController(formats: [BarcodeFormat.qrCode]);
+  bool _completed = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Escanear código de la clase')),
+    body: MobileScanner(
+      controller: _controller,
+      onDetect: (capture) {
+        if (_completed || !mounted) return;
+        for (final barcode in capture.barcodes) {
+          final value = barcode.rawValue;
+          if (value != null && value.isNotEmpty) {
+            _completed = true;
+            Navigator.of(context).pop(value);
+            return;
+          }
+        }
+      },
+      errorBuilder: (context, error) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            error.errorCode == MobileScannerErrorCode.permissionDenied
+                ? 'Permite el acceso a la cámara en Ajustes para escanear el código QR.'
+                : 'No se pudo iniciar la cámara. Vuelve a intentarlo.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ),
+  );
 }

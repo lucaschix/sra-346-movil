@@ -5,6 +5,17 @@ Actuar como `sra-mobile-orchestrator` para solicitudes de reparación de varios 
 
 Leer `docs/agents/PROJECT_CONTEXT.md`, `RUNTIMES.md` y el código afectado antes de editar. El contexto es una fotografía, no sustituye la inspección del checkout actual. Todos los paths de esta documentación son relativos a la raíz del repositorio.
 
+## Migración iOS 26 — rama migration/ios-26
+
+Esta rama corresponde a la tarea de migración separada para iPhone 11 / iOS 26.5.2.
+Usar Flutter 3.38.10 / Dart 3.10.9 y null safety; versiones en pubspec.lock.
+La estructura iOS usa UIScene, deployment target 15.0 y Xcode 26.3.
+Las restricciones de Flutter 1.12, Dart 2.7 y Android siguientes describen el
+baseline de main y no aplican a esta migración. Android no está migrado ni validado.
+Los comandos legados de la skill de build tampoco se aplican a esta rama; usar
+README.md, RUNTIMES.md y codemagic.yaml. Mantener los contratos y límites de seguridad
+restantes. No ejecutar pub get de esta rama con el SDK antiguo.
+
 ## Restricciones técnicas
 - Conservar Flutter 1.12.13+hotfix.9, Dart 2.7.2 sin null safety, JDK 8, Gradle 5.6.2, AGP 3.5.0, Kotlin 1.3.50. No introducir `late`, `required`, tipos nullable de null safety, `context.mounted`, records ni APIs de Flutter moderno. En State usar `mounted` cuando corresponda.
 - Mantener `pubspec.lock`, versiones fijadas y workaround `barcode_scan` en `android/build.gradle`. Actualizar SDK, dependencias o arquitectura exige una tarea de migración explícita, separada de la reparación.
