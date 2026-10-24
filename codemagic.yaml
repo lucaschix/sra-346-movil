@@ -80,6 +80,13 @@ workflows:
             exit 1
           fi
           exit "$pub_status"
+      - name: Ajustar stub debug legado para Xcode 16
+        script: |
+          set -euo pipefail
+          sra_sdk_root="$(dirname "$(dirname "$(command -v flutter)")")"
+          python3 ci/patch_flutter_xcode_backend.py "$sra_sdk_root" | tee diagnostics/sdk-compatibility.log
+          bash -n "$sra_sdk_root/packages/flutter_tools/bin/xcode_backend.sh"
+          git -C "$sra_sdk_root" diff -- packages/flutter_tools/bin/xcode_backend.sh > diagnostics/sdk-compatibility.diff
       - name: Compilar iOS debug sin firma
         script: |
           set -euo pipefail
