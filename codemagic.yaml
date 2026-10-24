@@ -5,9 +5,23 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 30
     environment:
-      flutter: 1.12.13+hotfix.9
       xcode: latest
     scripts:
+      - name: Instalar Flutter legado desde el repositorio oficial
+        script: |
+          set -euo pipefail
+          mkdir -p diagnostics
+          if [ "$(uname -m)" = arm64 ]; then
+            if ! arch -x86_64 /usr/bin/true; then
+              sudo softwareupdate --install-rosetta --agree-to-license
+            fi
+            arch -x86_64 /usr/bin/true
+          fi
+          sra_flutter_dir="$(mktemp -d "${TMPDIR:-/tmp}/sra-flutter.XXXXXX")"
+          git clone --depth 1 --branch v1.12.13+hotfix.9 \
+            https://github.com/flutter/flutter.git "$sra_flutter_dir"
+          test "$(git -C "$sra_flutter_dir" rev-parse HEAD)" = f139b11009aeb8ed2a3a3aa8b0066e482709dde3
+          printf 'PATH=%s/bin:%s\n' "$sra_flutter_dir" "$PATH" >> "$CM_ENV"
       - name: Registrar y verificar entorno
         script: |
           set -euo pipefail
