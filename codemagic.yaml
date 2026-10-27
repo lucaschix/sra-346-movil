@@ -8,7 +8,7 @@ workflows:
     environment:
       xcode: "26.3"
       vars:
-        SRA_API_BASE_URL: "http://192.168.1.82:8080"
+        SRA_API_BASE_URL: "http://192.168.1.15:8080"
     scripts:
       - name: Instalar Flutter 3.38.10 fijado
         script: |

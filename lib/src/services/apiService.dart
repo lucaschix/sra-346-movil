@@ -18,7 +18,7 @@ class ApiService {
            baseUrl ??
            const String.fromEnvironment(
              'SRA_API_BASE_URL',
-             defaultValue: 'http://192.168.1.82:8080',
+             defaultValue: 'http://192.168.1.15:8080',
            ),
        _tokenProvider = tokenProvider ?? JwtService().getToken;
 
