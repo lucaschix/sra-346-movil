@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:sra_346_movil/src/errors/appException.dart';
 import 'package:sra_346_movil/src/services/jwtService.dart';
 import 'package:sra_346_movil/src/services/loginService.dart';
 
 import 'AttendancePage.dart';
-import 'ErrorNotification.dart';
 
 class LoginPage extends StatefulWidget {
-  LoginPage({this.params, this.onSignedIn});
+  LoginPage({
+    this.params,
+    this.onSignedIn,
+    JwtService? jwtService,
+    LoginService? loginService,
+    this.signedInPage,
+  }) : jwtService = jwtService ?? JwtService(),
+       loginService = loginService ?? LoginService();
 
   final Map? params;
   final VoidCallback? onSignedIn;
+  final JwtService jwtService;
+  final LoginService loginService;
+  final Widget? signedInPage;
 
   @override
   State<StatefulWidget> createState() => new _LoginPageState();
@@ -28,6 +38,9 @@ class _LoginPageState extends State<LoginPage> {
   // Initial form is login form
   FormMode _formMode = FormMode.LOGIN;
   bool _isLoading = false;
+  bool _passwordChangeInProgress = false;
+  int _operationGeneration = 0;
+  int _passwordDialogGeneration = 0;
   String _resetPassMessage = "Un token se enviará a su correo";
   // Check if form is valid before perform login or signup
   bool _validateAndSave(GlobalKey<FormState> formKey) {
@@ -40,46 +53,75 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> loginIn() async {
-    try {
-      await LoginService().signIn(_email, _password);
-      await LoginService().fetchRut(_email);
-      var jwt = JwtService();
-      String token = await jwt.getToken();
-      String username = await jwt.getUsername();
-
-      if (username != "" && token != "") {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => AttendancePage()),
-        );
-      }
-    } catch (e) {
-      print('Error: $e');
-
-      ErrorNotification().throwErrors(e, context, LoginPage());
+    await widget.jwtService.removeToken();
+    final authentication = await widget.loginService.signIn(_email, _password);
+    if (!mounted) return;
+    if (!authentication.roles.contains('ROLE_ESTUD')) {
+      throw const UnsupportedRoleException();
     }
+    final rut = await widget.loginService.fetchRut(
+      _email,
+      token: authentication.token,
+    );
+    if (!mounted) return;
+    await widget.jwtService.saveSession(
+      token: authentication.token,
+      username: authentication.username,
+      rut: rut,
+    );
+    if (!mounted) {
+      await widget.jwtService.removeToken();
+      return;
+    }
+    widget.onSignedIn?.call();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => widget.signedInPage ?? AttendancePage(),
+      ),
+    );
   }
 
   // Perform login or signup
   void _validateAndSubmit() async {
+    if (_isLoading ||
+        _passwordChangeInProgress ||
+        !_validateAndSave(_formKey)) {
+      return;
+    }
+    final submittedMode = _formMode;
+    final operationGeneration = ++_operationGeneration;
     setState(() {
       _errorMessage = "";
       _isLoading = true;
     });
-    if (_validateAndSave(_formKey)) {
-      if (_formMode == FormMode.LOGIN) {
+    try {
+      if (submittedMode == FormMode.LOGIN) {
         await loginIn();
       } else {
-        await LoginService().recoverPassword(_email);
+        await widget.loginService.recoverPassword(_email);
+        if (!mounted ||
+            operationGeneration != _operationGeneration ||
+            submittedMode != _formMode) {
+          return;
+        }
         _showPasswordEmailSentDialog();
       }
+    } catch (error) {
+      if (submittedMode == FormMode.LOGIN) {
+        await widget.jwtService.removeToken();
+      }
+      if (!mounted) return;
       setState(() {
-        _isLoading = false;
+        _errorMessage = submittedMode == FormMode.LOGIN
+            ? error is UnsupportedRoleException
+                  ? 'Esta cuenta no tiene un flujo habilitado en la app móvil.'
+                  : 'No se pudo iniciar sesión. Verifique sus datos o conexión.'
+            : 'No se pudo iniciar la recuperación. Intente nuevamente.';
       });
-    } else {
-      setState(() {
-        _isLoading = false;
-      });
+    } finally {
+      if (mounted && operationGeneration == _operationGeneration) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -91,6 +133,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _changeFormToLogin() {
+    if (_passwordChangeInProgress) return;
+    _operationGeneration++;
     _formKey.currentState?.reset();
     _errorMessage = "";
     setState(() {
@@ -99,6 +143,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _changeFormToPasswordReset() {
+    if (_passwordChangeInProgress) return;
+    _operationGeneration++;
     _formKey.currentState?.reset();
     _errorMessage = "";
     setState(() {
@@ -124,13 +170,22 @@ class _LoginPageState extends State<LoginPage> {
   void _showPasswordEmailSentDialog() {
     String _token = '';
     String _newPassword = '';
-    Alert(
+    var dialogOpen = true;
+    final dialogGeneration = ++_passwordDialogGeneration;
+    late final Alert passwordAlert;
+    passwordAlert = Alert(
       context: context,
       title: _resetPassMessage,
+      closeFunction: () {
+        if (!dialogOpen) return;
+        dialogOpen = false;
+        _passwordDialogGeneration++;
+        Navigator.of(context, rootNavigator: true).pop();
+      },
       content: new Form(
         key: _formRecoverPassKey,
-        child: new ListView(
-          shrinkWrap: true,
+        child: new Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             TextFormField(
               maxLines: 1,
@@ -158,7 +213,7 @@ class _LoginPageState extends State<LoginPage> {
               validator: (value) => (value?.isEmpty ?? true)
                   ? 'Contraseña no puede estar en blanco'
                   : null,
-              onSaved: (value) => _newPassword = (value?.trim() ?? ''),
+              onSaved: (value) => _newPassword = value ?? '',
             ),
           ],
         ),
@@ -166,13 +221,32 @@ class _LoginPageState extends State<LoginPage> {
       buttons: [
         DialogButton(
           onPressed: () async {
-            if (_validateAndSave(_formRecoverPassKey)) {
-              await LoginService().changePassword(_token, _newPassword);
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
+            if (_passwordChangeInProgress ||
+                !_validateAndSave(_formRecoverPassKey)) {
+              return;
+            }
+            _passwordChangeInProgress = true;
+            try {
+              await widget.loginService.changePassword(_token, _newPassword);
+              if (!mounted ||
+                  !dialogOpen ||
+                  dialogGeneration != _passwordDialogGeneration) {
+                return;
+              }
+              dialogOpen = false;
+              _passwordDialogGeneration++;
+              await passwordAlert.dismiss();
+            } catch (_) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'No se pudo confirmar el cambio de contraseña.',
+                  ),
+                ),
               );
+            } finally {
+              _passwordChangeInProgress = false;
             }
           },
           child: Text(
@@ -181,7 +255,13 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ],
-    ).show();
+    );
+    passwordAlert.show().whenComplete(() {
+      dialogOpen = false;
+      if (dialogGeneration == _passwordDialogGeneration) {
+        _passwordDialogGeneration++;
+      }
+    });
   }
 
   Widget _showBody() {
@@ -269,7 +349,7 @@ class _LoginPageState extends State<LoginPage> {
           validator: (value) => (value?.isEmpty ?? true)
               ? 'Contraseña no puede estar en blanco'
               : null,
-          onSaved: (value) => _password = (value?.trim() ?? ''),
+          onSaved: (value) => _password = value ?? '',
         ),
       );
     } else {
@@ -296,7 +376,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           color: Colors.white, //widget.params['buttonColor'],
           child: _textPrimaryButton(),
-          onPressed: _validateAndSubmit,
+          onPressed: _isLoading ? null : _validateAndSubmit,
         ),
       ),
     );
@@ -305,7 +385,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _showSecondaryButton() {
     return new TextButton(
       child: _textSecondaryButton(),
-      onPressed: _changeFormToLogin,
+      onPressed: _isLoading ? null : _changeFormToLogin,
     );
   }
 
@@ -324,7 +404,7 @@ class _LoginPageState extends State<LoginPage> {
               '',
               style: new TextStyle(fontSize: 15.0, fontWeight: FontWeight.w300),
             ),
-      onPressed: _changeFormToPasswordReset,
+      onPressed: _isLoading ? null : _changeFormToPasswordReset,
     );
   }
 

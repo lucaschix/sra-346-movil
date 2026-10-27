@@ -6,8 +6,23 @@ import 'package:sra_346_movil/src/services/jwtService.dart';
 import 'package:sra_346_movil/src/services/loginService.dart';
 import 'OvalRightBorderClipper.dart';
 
-class DrawerPage extends StatelessWidget {
+class DrawerPage extends StatefulWidget {
+  DrawerPage({JwtService? jwtService, LoginService? loginService})
+    : jwtService = jwtService ?? JwtService(),
+      loginService = loginService ?? LoginService();
+
+  final JwtService jwtService;
+  final LoginService loginService;
+
+  @override
+  State<DrawerPage> createState() => _DrawerPageState();
+}
+
+class _DrawerPageState extends State<DrawerPage> {
   final _formRecoverPassKey = new GlobalKey<FormState>();
+  bool _loggingOut = false;
+  bool _passwordChangeInProgress = false;
+  int _passwordDialogGeneration = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +36,7 @@ class DrawerPage extends StatelessWidget {
         ),
         width: 300,
         child: FutureBuilder<String>(
-          future: JwtService().getUsername(),
+          future: widget.jwtService.getUsername(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return listTile(context, snapshot.data!);
@@ -56,19 +71,28 @@ class DrawerPage extends StatelessWidget {
         ListTile(
           leading: Icon(Icons.exit_to_app),
           title: Text('Salir'),
-          onTap: () async {
-            var token = await JwtService().removeToken();
-            print("Status: " + token);
-            if (token == "") {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
-            }
-          },
+          onTap: _loggingOut ? null : () => _logout(context),
         ),
       ],
     );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    setState(() => _loggingOut = true);
+    try {
+      await widget.jwtService.removeToken();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => LoginPage()),
+        (_) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loggingOut = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cerrar la sesión.')),
+      );
+    }
   }
 
   bool _validateAndSave(GlobalKey<FormState> formKey) {
@@ -82,15 +106,25 @@ class DrawerPage extends StatelessWidget {
 
   //TODO problema sin identificar
   void _changePassword(context) {
+    if (_passwordChangeInProgress) return;
     String _actualPassword = '';
     String _newPassword = '';
-    Alert(
+    var dialogOpen = true;
+    final dialogGeneration = ++_passwordDialogGeneration;
+    late final Alert passwordAlert;
+    passwordAlert = Alert(
       context: context,
       title: "Cambiar contraseña",
+      closeFunction: () {
+        if (!dialogOpen) return;
+        dialogOpen = false;
+        _passwordDialogGeneration++;
+        Navigator.of(context, rootNavigator: true).pop();
+      },
       content: new Form(
         key: _formRecoverPassKey,
-        child: new ListView(
-          shrinkWrap: true,
+        child: new Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             TextFormField(
               maxLines: 1,
@@ -104,7 +138,7 @@ class DrawerPage extends StatelessWidget {
               validator: (value) => (value?.isEmpty ?? true)
                   ? 'Contraseña no puede estar en blanco'
                   : null,
-              onSaved: (value) => _actualPassword = (value?.trim() ?? ''),
+              onSaved: (value) => _actualPassword = value ?? '',
             ),
             TextFormField(
               maxLines: 1,
@@ -118,7 +152,7 @@ class DrawerPage extends StatelessWidget {
               validator: (value) => (value?.isEmpty ?? true)
                   ? 'Contraseña no puede estar en blanco'
                   : null,
-              onSaved: (value) => _newPassword = (value?.trim() ?? ''),
+              onSaved: (value) => _newPassword = value ?? '',
             ),
           ],
         ),
@@ -126,15 +160,42 @@ class DrawerPage extends StatelessWidget {
       buttons: [
         DialogButton(
           onPressed: () async {
-            if (_validateAndSave(_formRecoverPassKey)) {
-              await LoginService().changePasswordInterno(
+            if (_passwordChangeInProgress ||
+                !_validateAndSave(_formRecoverPassKey)) {
+              return;
+            }
+            _passwordChangeInProgress = true;
+            try {
+              await widget.loginService.changePasswordInterno(
                 _actualPassword,
                 _newPassword,
               );
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
+              if (!mounted ||
+                  !dialogOpen ||
+                  dialogGeneration != _passwordDialogGeneration) {
+                return;
+              }
+              dialogOpen = false;
+              _passwordDialogGeneration++;
+              await passwordAlert.dismiss();
+              if (!mounted) return;
+              await widget.jwtService.removeToken();
+              if (!mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => LoginPage()),
+                (_) => false,
               );
+            } catch (_) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'No se pudo confirmar el cambio de contraseña.',
+                  ),
+                ),
+              );
+            } finally {
+              _passwordChangeInProgress = false;
             }
           },
           child: Text(
@@ -143,7 +204,13 @@ class DrawerPage extends StatelessWidget {
           ),
         ),
       ],
-    ).show();
+    );
+    passwordAlert.show().whenComplete(() {
+      dialogOpen = false;
+      if (dialogGeneration == _passwordDialogGeneration) {
+        _passwordDialogGeneration++;
+      }
+    });
   }
 
   InputDecoration _decoration(text, icon, {textColor = Colors.white54}) {
