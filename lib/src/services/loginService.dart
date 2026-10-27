@@ -1,90 +1,144 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sra_346_movil/src/errors/appException.dart';
 
 import 'apiService.dart';
+import 'jwtService.dart';
+
+class SignInResult {
+  const SignInResult({
+    required this.token,
+    required this.username,
+    required this.roles,
+  });
+
+  final String token;
+  final String username;
+  final List<String> roles;
+}
 
 class LoginService {
-  var apiService = ApiService();
+  LoginService({ApiService? apiService})
+    : apiService = apiService ?? ApiService();
 
-  signIn(String email, pass) async {
-    // User eo = new User(usuEmail: email, usuClave: pass);
-    var jsonResponse = await apiService.post(
-      "api/login?username=$email&password=$pass",
+  final ApiService apiService;
+
+  Future<SignInResult> signIn(String email, String password) async {
+    final response = await apiService.post(
+      'api/login',
+      queryParameters: {'username': email, 'password': password},
+      includeAuthorization: false,
     );
-    try {
-      SharedPreferences sharedPreferences =
-          await SharedPreferences.getInstance();
-      sharedPreferences.setString("token", jsonResponse["token"]);
-      sharedPreferences.setString("username", jsonResponse["user"]["username"]);
-      print("Token y nombre usuario guardados");
-    } catch (e) {
-      print("Error en sharedPreferences: " + e.toString());
+    final body = _map(response);
+    final token = body['token'];
+    final user = body['user'];
+    if (token is! String || token.isEmpty || user is! Map) {
+      throw const InvalidResponseException();
     }
-
-    return jsonResponse;
-  }
-
-  recoverPassword(email) async {
-    return await apiService.post('api/enviar_token?email=$email');
-  }
-
-  changePassword(token, newPassword) async {
-    try {
-      var response = await apiService.post('api/validar_token?token=$token');
-      if (response["validezToken"]) {
-        return await apiService.post(
-          'api/recuperar?token=$token&nuevaClave=$newPassword',
-        );
+    final username = user['username'];
+    final authorities = user['authorities'];
+    if (username is! String || username.isEmpty || authorities is! List) {
+      throw const InvalidResponseException();
+    }
+    final roles = <String>[];
+    for (final authority in authorities) {
+      if (authority is! Map || authority['authority'] is! String) {
+        throw const InvalidResponseException();
       }
-    } catch (e) {
-      print(e.toString());
-      throw new Exception("Error sl cambiar contraseña");
+      roles.add(authority['authority'] as String);
+    }
+    if (roles.isEmpty) throw const InvalidResponseException();
+    return SignInResult(token: token, username: username, roles: roles);
+  }
+
+  Future<int> fetchRut(String email, {required String token}) async {
+    final body = _map(
+      await apiService.post(
+        'api/rut',
+        queryParameters: {'email': email},
+        authorizationToken: token,
+      ),
+    );
+    final rut = body['digitos'];
+    if (body['mensaje'] != 'Proceso exitoso' || rut is! int) {
+      throw const InvalidResponseException();
+    }
+    return rut;
+  }
+
+  Future<void> recoverPassword(String email) async {
+    final body = _map(
+      await apiService.post(
+        'api/enviar_token',
+        queryParameters: {'email': email},
+        includeAuthorization: false,
+      ),
+    );
+    if (body['mensaje'] !=
+            'Correo de recuperacion enviado, revise su bandeja de entrada' ||
+        body['email'] != email) {
+      throw const InvalidResponseException();
     }
   }
 
-  //TODO Por verificar funcionamiento, cambio interno error 500 si clave actual es rechazada
-  changePasswordInterno(String actualPassword, newPassword) async {
-    try {
-      var response = await apiService.post(
-        'api/cambio_interno?claveActual=$actualPassword',
-      );
-      if (response["token"] != null) {
-        String token = response["token"];
-        return await apiService.post(
-          'api/recuperar?token=$token&nuevaClave=$newPassword',
-        );
-      }
-    } catch (e) {
-      print(e.toString());
-      throw new Exception("Error al cambiar contraseña");
+  Future<void> changePassword(String token, String newPassword) async {
+    final validation = _map(
+      await apiService.post(
+        'api/validar_token',
+        queryParameters: {'token': token},
+        includeAuthorization: false,
+      ),
+    );
+    if (validation['validezToken'] != true) {
+      throw const InvalidResponseException();
+    }
+    await _saveNewPassword(token, newPassword);
+  }
+
+  Future<void> changePasswordInterno(
+    String actualPassword,
+    String newPassword,
+  ) async {
+    final validation = _map(
+      await apiService.post(
+        'api/cambio_interno',
+        queryParameters: {'claveActual': actualPassword},
+      ),
+    );
+    final token = validation['token'];
+    if (token is! String || token.isEmpty) {
+      throw const InvalidResponseException();
+    }
+    await _saveNewPassword(token, newPassword);
+  }
+
+  Future<void> _saveNewPassword(String token, String newPassword) async {
+    final body = _map(
+      await apiService.post(
+        'api/recuperar',
+        queryParameters: {'token': token, 'nuevaClave': newPassword},
+        includeAuthorization: false,
+      ),
+    );
+    if (body['mensaje'] != 'Clave cambiada con exito') {
+      throw const InvalidResponseException();
     }
   }
 
-  fetchRut(String email) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    try {
-      var rut = await apiService.post('api/rut/?email=$email');
-      if (rut["mensaje"] == "Proceso exitoso") {
-        int rutDigitos = rut["digitos"];
-        sharedPreferences.setInt("rut", rutDigitos);
-      }
-    } catch (e) {
-      print(e.toString());
-      throw new Exception("Error en fetchRut");
-    }
+  Future<dynamic> getMatricula(int asignaturaID) async {
+    final rut = await JwtService().getRut();
+    if (rut == null)
+      throw const InvalidInputException('La sesión no contiene RUT');
+    final body = _map(
+      await apiService.get(
+        'asistencia/estudiante/matricula/',
+        queryParameters: {'asignatura': asignaturaID, 'estRut': rut},
+      ),
+    );
+    if (body['matricula'] == null) throw const InvalidResponseException();
+    return body['matricula'];
   }
 
-  getMatricula(int asignaturaID) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    try {
-      final rutDigitos = sharedPreferences.getInt("rut");
-      if (rutDigitos == null) throw StateError('La sesión no contiene RUT');
-      var responseMat = await apiService.get(
-        'asistencia/estudiante/matricula/?asignatura=$asignaturaID&estRut=$rutDigitos',
-      );
-      return responseMat["matricula"];
-    } catch (e) {
-      print(e.toString());
-      throw new Exception("Error en GetMatricula");
-    }
+  Map<dynamic, dynamic> _map(dynamic response) {
+    if (response is! Map) throw const InvalidResponseException();
+    return response;
   }
 }
